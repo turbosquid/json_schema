@@ -81,12 +81,16 @@ class SchemaNode {
   }
 
   List<String> get label {
+    var color = 'wheat';
+    if (schema.source !=null && schema.source == 'external')
+      color = '#AB9B7D';
+
     return
     [ 'label =<' ]
     ..add('<table border="0" cellborder="0" cellpadding="1" bgcolor="white">')
-    ..add(wrap(schema.path, port : "@path"))
+    ..add(wrap(schema.path, port : "@path", color: color))
     ..add(wrap(title))
-    ..add(wrap(description))
+    ..add(wrap(description, color: color))
     ..addAll(definitionEntries)
     ..addAll(propertyEntries)
     ..addAll(additionalPropertiesSchema)
