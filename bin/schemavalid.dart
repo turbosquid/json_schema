@@ -74,7 +74,7 @@ final _logger = new Logger("schemavalid");
 main(List<String> args) { 
   Logger.root.onRecord.listen((LogRecord r) =>
       print("${r.loggerName} [${r.level}]:\t${r.message}"));
-  Logger.root.level = Level.INFO;
+  Logger.root.level = Level.WARNING;
   Map argResults = _parseArgs(args);
 
   Map options = argResults['options'];
