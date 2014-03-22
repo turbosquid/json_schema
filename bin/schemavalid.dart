@@ -1,12 +1,10 @@
 #!/usr/bin/env dart
 /// 
-/// Usage: schemadot --in-uri INPUT_JSON_URI --out-file OUTPUT_FILE
+/// Usage: schemavalid --schema INPUT_SCHEMA_URI --json INPUT_JSON_URI --key KEY
 ///
-/// Given an input uri [in-uri] processes content of uri as
-/// json schema and generates input file for Graphviz dot
-/// program. If [out-file] provided, output is written to 
-/// to the file, otherwise written to stdout.
-/// 
+/// Given a schema uri [schema], json uri [json] and key [key]
+/// validate the json starting at key against the schema
+///
 
 import 'dart:async';
 import 'dart:convert' as convert;
@@ -24,10 +22,10 @@ ArgParser _parser;
 void _usage() { 
   print('''
 
-Usage: schemavalid --schema INPUT_SCHEMA_URI --json INPUT_JSON_URI
+Usage: schemavalid --schema INPUT_SCHEMA_URI --json INPUT_JSON_URI [--k KEY]
 
-Given an schema uri [schema] and json uri [json]
-validate the json against the schema.
+Given a schema uri [schema], json uri [json] and key [key]
+validate the json starting at key against the schema
 
 ''');
   print(_parser.getUsage());
@@ -53,6 +51,10 @@ Map _parseArgs(args) {
       allowMultiple: false,
       abbr: 'j',
       allowed: null);
+    _parser.addOption('key',
+      defaultsTo: null,
+      allowMultiple: false,
+      abbr: 'k');
 
     /// Parse the command line options (excluding the script)
     var arguments = args;
@@ -91,24 +93,78 @@ main(List<String> args) {
     print(e);
     _usage();
   }
-  // custom <schemadot main>
+  // custom <schemavalid main>
 
-  String suri = options['schema'];
-  Schema.createSchemaFromUrl(suri)
-    .then((schema) {
-      String juri = options['json'];
-      File target = new File(juri);
-      var json = convert.JSON.decode(target.readAsStringSync());
+  Completer schemaCompleter = new Completer();
 
-      print(schema.validate(json));
+  //download the schema
+  Uri suri = Uri.parse(options['schema']);
+  if (suri.scheme == 'http' || suri.scheme == 'https') {
+
+    new HttpClient().getUrl(suri).then((HttpClientRequest request) => request.close())
+      .then((HttpClientResponse response) =>
+          response.transform(new convert.Utf8Decoder()).join())
+      .then((text) {
+        schemaCompleter.complete(text);
+      });
+
+  }
+  else {
+
+    File target = new File(suri.toString());
+    if(target.existsSync()) {
+      schemaCompleter.complete(target.readAsStringSync());
+    }
+    else {
+      print('file does not exist');
+    }
+  }
+
+  schemaCompleter.future.then((schemaText) {
+    Future schema = Schema.createSchema(convert.JSON.decode(schemaText));
+    schema.then((schema) {
+
+      Completer jsonCompleter = new Completer();
+
+      Uri juri = Uri.parse(options['json']);
+      if (juri.scheme == 'http' || juri.scheme == 'https') {
+
+        new HttpClient().getUrl(juri).then((HttpClientRequest request) => request.close())
+          .then((HttpClientResponse response) =>
+              response.transform(new convert.Utf8Decoder()).join())
+          .then((text) {
+            jsonCompleter.complete(text);
+          });
+      }
+      else {
+
+        File target = new File(juri.toString());
+        if(target.existsSync()) {
+          jsonCompleter.complete(target.readAsStringSync());
+        }
+        else {
+          print('file does not exist');
+        }
+
+      }
+
+      jsonCompleter.future.then((jsonText) {
+        var json = convert.JSON.decode(jsonText);
+        if (options['key'] != null) {
+          json = json[options['key']];
+        }
+        print(schema.validate(json));
+      });
+
     });
+  });
 
-  // end <schemadot main>
+  // end <schemavalid main>
 
 }
 
-// custom <schemadot global>
+// custom <schemavalid global>
 
-// end <schemadot global>
+// end <schemavalid global>
 
 
