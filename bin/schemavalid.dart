@@ -22,7 +22,7 @@ ArgParser _parser;
 void _usage() { 
   print('''
 
-Usage: schemavalid --schema INPUT_SCHEMA_URI --json INPUT_JSON_URI [--k KEY]
+Usage: schemavalid --schema INPUT_SCHEMA_URI --json INPUT_JSON_URI [--k KEY] [--array ARRAY]
 
 Given a schema uri [schema], json uri [json] and key [key]
 validate the json starting at key against the schema
@@ -55,6 +55,10 @@ Map _parseArgs(args) {
       defaultsTo: null,
       allowMultiple: false,
       abbr: 'k');
+    _parser.addOption('array',
+      defaultsTo: null,
+      allowMultiple: false,
+      abbr: 'a');
 
     /// Parse the command line options (excluding the script)
     var arguments = args;
@@ -150,10 +154,32 @@ main(List<String> args) {
 
       jsonCompleter.future.then((jsonText) {
         var json = convert.JSON.decode(jsonText);
-        if (options['key'] != null) {
-          json = json[options['key']];
+
+        if (options['array'] != null) {
+          //when doing an array raise the log level
+          Logger.root.level = Level.SEVERE;
+
+          var keys = options['array'].split('.');
+          for (var k = 0; k < keys.length; ++k) {
+            json = json[keys[k]];
+          }
+
+          for (var i = 0; i < json.length; ++i) {
+            if (schema.validate(json[i])) {
+              print(i.toString() + ' was valid');
+            }
+            else {
+              print(i.toString() + ' was invalid');
+              print(json[i]);
+            }
+          }
         }
-        print(schema.validate(json));
+        else {
+          if (options['key'] != null) {
+            json = json[options['key']];
+          }
+          print(schema.validate(json));
+        }
       });
 
     });
