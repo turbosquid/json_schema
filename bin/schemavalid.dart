@@ -60,7 +60,8 @@ Map _parseArgs(args) {
       allowMultiple: false,
       abbr: 'a');
     _parser.addFlag('debug', 
-      abbr: 'd');
+      abbr: 'd',
+      defaultsTo: false);
 
     /// Parse the command line options (excluding the script)
     var arguments = args;
@@ -87,7 +88,7 @@ main(List<String> args) {
   Map options = argResults['options'];
   List positionals = argResults['rest'];
 
-  if (options["debug"] == null)
+  if (!options["debug"])
     Logger.root.level = Level.SEVERE;
   else
     Logger.root.level = Level.WARNING;
