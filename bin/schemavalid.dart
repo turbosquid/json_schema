@@ -176,7 +176,7 @@ main(List<String> args) {
               print('---------------------------');
               print(i.toString() + ' was invalid');
               print(json[i]);
-              print(schema.errors);
+              printErrors(schema.errors);
               print('---------------------------');
             }
           }
@@ -186,7 +186,7 @@ main(List<String> args) {
             json = json[options['key']];
           }
           if (!schema.validate(json, true)) {
-            print(schema.errors);
+            printErrors(schema.errors);
             print('schema was invalid');
           }
           else {
@@ -202,6 +202,12 @@ main(List<String> args) {
 
 }
 
+printErrors(List<String> errors) {
+  print('there were ' + errors.length.toString() + ' error(s):');
+  for (var e = 0; e < errors.length; ++e) {
+    print(e.toString() + ':\t' + errors[e]);
+  }
+}
 // custom <schemavalid global>
 
 // end <schemavalid global>
