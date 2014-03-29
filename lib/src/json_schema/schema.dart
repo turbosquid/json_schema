@@ -61,6 +61,7 @@ class Schema {
   dynamic get defaultValue => _defaultValue;
   /// Map of path to schema object
   Map<String,Schema> get refMap => _refMap;
+  List<String> get errors => _errors;
 
   // custom <class Schema>
 
@@ -96,8 +97,13 @@ class Schema {
     new Schema._fromRootMap(data)._thisCompleter.future;
 
   /// Validate [instance] against this schema
-  bool validate(dynamic instance) =>
-    new Validator(this).validate(instance);
+  bool validate(dynamic instance, [ bool reportMultipleErrors = false ]) {
+    var v = new Validator(this);
+    bool valid = v.validate(instance, reportMultipleErrors);
+    _errors.addAll(v.errors);
+    
+    return valid;
+  }
 
   bool get exclusiveMaximum => _exclusiveMaximum == null || _exclusiveMaximum;
   bool get exclusiveMinimum => _exclusiveMinimum == null || _exclusiveMinimum;
@@ -616,6 +622,7 @@ class Schema {
   Set<String> _pathsEncountered = new Set();
   /// Support for optional formats (date-time, uri, email, ipv6, hostname)
   String _format;
+  List<String> _errors = [];
 }
 // custom <part schema>
 // end <part schema>

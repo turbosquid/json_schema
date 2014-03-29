@@ -59,6 +59,8 @@ Map _parseArgs(args) {
       defaultsTo: null,
       allowMultiple: false,
       abbr: 'a');
+    _parser.addFlag('debug', 
+      abbr: 'd');
 
     /// Parse the command line options (excluding the script)
     var arguments = args;
@@ -80,12 +82,16 @@ final _logger = new Logger("schemavalid");
 main(List<String> args) { 
   Logger.root.onRecord.listen((LogRecord r) =>
       print("${r.loggerName} [${r.level}]:\t${r.message}"));
-  Logger.root.level = Level.WARNING;
   Map argResults = _parseArgs(args);
 
   Map options = argResults['options'];
   List positionals = argResults['rest'];
 
+  if (options["debug"] == null)
+    Logger.root.level = Level.SEVERE;
+  else
+    Logger.root.level = Level.WARNING;
+  
   try { 
     if(options["schema"] == null)
       throw new ArgumentError("option: schema is required");
@@ -120,7 +126,7 @@ main(List<String> args) {
       schemaCompleter.complete(target.readAsStringSync());
     }
     else {
-      print('file does not exist');
+      print('schema file does not exist');
     }
   }
 
@@ -147,7 +153,7 @@ main(List<String> args) {
           jsonCompleter.complete(target.readAsStringSync());
         }
         else {
-          print('file does not exist');
+          print('json file does not exist');
         }
 
       }
@@ -156,21 +162,21 @@ main(List<String> args) {
         var json = convert.JSON.decode(jsonText);
 
         if (options['array'] != null) {
-          //when doing an array raise the log level
-          Logger.root.level = Level.SEVERE;
-
           var keys = options['array'].split('.');
           for (var k = 0; k < keys.length; ++k) {
             json = json[keys[k]];
           }
 
           for (var i = 0; i < json.length; ++i) {
-            if (schema.validate(json[i])) {
+            if (schema.validate(json[i], true)) {
               print(i.toString() + ' was valid');
             }
             else {
+              print('---------------------------');
               print(i.toString() + ' was invalid');
               print(json[i]);
+              print(schema.errors);
+              print('---------------------------');
             }
           }
         }
@@ -178,7 +184,13 @@ main(List<String> args) {
           if (options['key'] != null) {
             json = json[options['key']];
           }
-          print(schema.validate(json));
+          if (!schema.validate(json, true)) {
+            print(schema.errors);
+            print('schema was invalid');
+          }
+          else {
+            print('schema validated');
+          }
         }
       });
 
