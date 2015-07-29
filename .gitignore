@@ -4,3 +4,4 @@ packages
 pubspec.lock
 # end <additional>
 .DS_Store
+.pub
